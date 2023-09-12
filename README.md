@@ -1,9 +1,9 @@
-#csf_analyzer
+# CSF Analyzer
 
-This is a CLI tool to analyze wavefunction from ORCA (CASSCF, ICE-CI...). Capabilities:
+This is a command-line tool to analyze wavefunctions from ORCA (CASSCF, ICE-CI...).
 
--Parse the weights and occupations of state-avereged calculations in ORCA
--Classify different type of excitation after reading user defined orbital block to evaluate charge-transfer.
--Classify degrees of excitation with respect to a given reference (coming soon)
+## Capabilities
 
-
+* Parse the weights and occupations of state-averaged calculations in ORCA
+* Classify different types of excitations after reading user-defined orbital blocks to evaluate charge transfer
+* Classify degrees of excitation with respect to a given reference (coming soon)
