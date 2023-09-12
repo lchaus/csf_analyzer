@@ -34,7 +34,7 @@ def main():
     args = parser.parse_args()
 
     if args.subcommand == "analyze":
-        wavefunction = Wavefunction(args.output, args.orbitals, args.thresh_bar, args.thresh_pie)
+        wavefunction = Wavefunction(args.output, args.orbitals)
         # Read orbitals from orbitals.dict file 
         wavefunction.read_orbitals()
         wavefunction.extract_data()
