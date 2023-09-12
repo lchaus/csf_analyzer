@@ -13,5 +13,4 @@ First, you need to run the analysis. You will need a text file "orbitals.dict", 
 We suggest to print the wavefunction using "TPrint 1e-6" in the CI block and trim it with a text editor or suitable script.
 
 
-'''python $path_csf_analyzer/main.py analyze orca.out orbitals.dict
-'''
+```python $path_csf_analyzer/main.py analyze orca.out orbitals.dict```
