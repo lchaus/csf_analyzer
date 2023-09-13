@@ -105,6 +105,7 @@ class Wavefunction:
                         target_block = block_name
 
                 if source_block is not None and target_block is not None:
+                    ic(source_block)
                     excitation_classes[(root, r'$\mathrm{' + source_block + r'\rightarrow\mathrm{' + target_block + r'$ ' +  number_to_string.get(excitation_degree, 'Unsupported') )] += weight
                 elif total_difference == 0:
                     excitation_classes[(root, 'Local')] += weight
@@ -214,10 +215,11 @@ class Wavefunction:
                     elif config[0] in [1, 2] and config[3] >= self.ref_csf_threshold_dict[str(root)]:
                         if config[0] == 1:
                             for loss_indice, gain_indice in zip(config[1], config[2]):
-                                key = f'$ {inverse_original_orbitals[loss_indice]} \\rightarrow {inverse_original_orbitals[gain_indice]}$'
+                                #key = f'$ {inverse_original_orbitals[loss_indice]} \\rightarrow {inverse_original_orbitals[gain_indice]}$'
+                                key = r'$\\mathrm{'+ inverse_original_orbitals[loss_indice]+ r'\\rightarrow\\mathrm{' + inverse_original_orbitals[gain_indice] + r'$'
                                 summary[root][key] += config[3]
                         else:  # case of double excitations (because some reference configurations are double excitations)
-                            key = f'$ '+ ', '.join([f'{inverse_original_orbitals[i]}' for i in config[1]]) + ' \\rightarrow ' + ', '.join([f'{inverse_original_orbitals[i]}' for i in config[2]]) + ' $'
+                            key = r'$\\mathrm{'+ r', \\mathrm{'.join([fr'{inverse_original_orbitals[i]}' for i in config[1]]) + r' \\rightarrow\\mathrm{' + r', \\mathrm{'.join([fr'{inverse_original_orbitals[i]}' for i in config[2]]) + r'$'
                             summary[root][key] += config[3]
                     #Classify remaining excitations
                     elif 0 < config[0] <= 4:
@@ -237,7 +239,7 @@ class Wavefunction:
             with open("excitation_classes.txt", 'w') as file:
                 for root, value in summary.items():
                     for key, value in value.items():
-                        file.write(f'({root}, {key}): {value}\n')
+                        file.write(f"({root}, '{key}'): {value}\n")
 
     ### VISUALIZATION ###
     def visualize(self, excitation_classes_filename, thresh_pie=0.04, thresh_bar=0.01, save_dir ='./plots'):
@@ -263,7 +265,7 @@ class Wavefunction:
         # Create a color map with more unique colors by combining several colormaps
         color_list = plt.cm.tab20(np.linspace(0, 1, 20)).tolist() + plt.cm.Pastel1(np.linspace(0, 1, 9)).tolist() + plt.cm.tab20c(np.linspace(0, 1, 20)).tolist()  + plt.cm.Pastel2(np.linspace(0, 1, 8)).tolist()
         cm = mcolors.LinearSegmentedColormap.from_list('combined_colormap', color_list, N=len(color_list))
-    
+
         for i, excitation_type in enumerate(sorted(excitation_types - set(colors.keys()))):
             # Check if the excitation type is a 'Root n' label
             if excitation_type.startswith('T'):
