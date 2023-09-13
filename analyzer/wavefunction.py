@@ -21,6 +21,7 @@ class Wavefunction:
         self.wavefunction = {}
         self.orbitals = None
 
+    ### DATA EXTRACTION ###
     #Read orbitals names and labels from a predefined file 
     def read_orbitals(self):
         # Read the content of the orbitals.dict file
@@ -65,6 +66,7 @@ class Wavefunction:
                 parsed_csf = parse_csf_string(csf) 
                 self.wavefunction[state_num].append((weight, parsed_csf))
 
+    ### ANALYSIS ###
     def local_analysis(self):
         excitation_classes = defaultdict(float)
 
@@ -168,6 +170,7 @@ class Wavefunction:
                 return electron_loss, (loss_indices, gain_indices)
             else:
                 return None
+
         #Retrieve ground state CSF
         ground_state_csf = self.wavefunction[self.ground_state_csf[0]][self.ground_state_csf[1]][self.ground_state_csf[2]]
 
@@ -179,7 +182,7 @@ class Wavefunction:
             for weight, curr_csf in csfs:
                 if round(weight,2) >= self.ref_csf_threshold_dict[root_str]:  # If the weight is above the threshold, store it as a main CSF
                     excitation_degree, (loss_indices, gain_indices) = get_excitation_degree(ground_state_csf, curr_csf)
-                    if excitation_degree == 1 and (loss_indices[0] == lmct_gl[0] and gain_indices[0] == lmct_gl[1]):
+                    if excitation_degree == 1 and (loss_indices[0] == self.lmct_gl[0] and gain_indices[0] == self.lmct_gl[1]):
                         state_configs[root].append(("LMCT", loss_indices, gain_indices, weight, curr_csf))
                     else:
                         state_configs[root].append((excitation_degree, loss_indices, gain_indices, weight, curr_csf))
@@ -189,13 +192,54 @@ class Wavefunction:
                 # Avoid considering the previously stored main CSFs and 'LMCT+Mono' excitations
                 if curr_csf in [csf for _, _, _, _, csf in state_configs[root]]:
                     continue
+
                 #Get all remaining excitations from the Ground state
                 # Unpack the result from get_excitation_degree()
                 excitation_degree, (loss_indices, gain_indices) = get_excitation_degree(ground_state_csf, curr_csf)
                 state_configs[root].append((excitation_degree, loss_indices, gain_indices, weight, curr_csf))
 
-        pass
+            summary = defaultdict(lambda: defaultdict(float))  # Initialize a dictionary with default values as 0.0
+            inverse_original_orbitals = {v: k for k, v in self.orbitals.items()}  # To map back from indices to orbital names
+    
+            # Loop over all roots (states) and their associated configurations
+            for root, configs in state_configs.items():
+                # Loop over all configurations for the current root
+                summary[root]['Other'] = 1 - sum([config[3] for config in configs])
+                for config in configs:
+                    #Track the LMCT in all roots
+                    if config[0] == 'LMCT':
+                        summary[root]['LMCT'] += config[3]
+                    #Classify the reference CSFs (single and double excitations from the ground state with a weight superior to the threshold)
+                    elif config[0] in [1, 2] and config[3] >= self.ref_csf_threshold_dict[str(root)]:
+                        if config[0] == 1:
+                            for loss_indice, gain_indice in zip(config[1], config[2]):
+                                key = f'$ {inverse_original_orbitals[loss_indice]} \\rightarrow {inverse_original_orbitals[gain_indice]}$'
+                                summary[root][key] += config[3]
+                        else:  # case of double excitations (because some reference configurations are double excitations)
+                            key = f'$ '+ ', '.join([f'{inverse_original_orbitals[i]}' for i in config[1]]) + ' \\rightarrow ' + ', '.join([f'{inverse_original_orbitals[i]}' for i in config[2]]) + ' $'
+                            summary[root][key] += config[3]
+                    #Classify remaining excitations
+                    elif 0 < config[0] <= 4:
+                        summary[root][{1: 'Single', 2: 'Double', 3: 'Triple', 4: 'Quadruple'}[config[0]]] += config[3]
+                        #Track the LMCT+Mono excitations in an additionnal category
+                        if config[0] == 2:
+                            if (self.lmct_gl[0] in config[1]) and (self.lmct_gl[1] in config[2]):
+                                summary[root]['LMCT+Single'] += config[3]
+                    #Track ROHF CSF
+                    elif config[0] == 0:
+                        summary[root]['ROHF'] += config[3]
+                    #Sum the remaining CSFs in an 'others' category
+                    else:
+                        summary[root]['Other'] += config[3]
 
+            # Write the data to the text file
+            with open("excitation_classes.txt", 'w') as file:
+                for root, value in summary.items():
+                    for key, value in value.items():
+                        file.write(f'({root}, {key}): {value}\n')
+
+
+    ### VISUALIZATION ###
     def visualize(self, excitation_classes_filename, thresh_pie=0.04, thresh_bar=0.01, save_dir ='./plots'):
         excitation_classes = {}
         with open(excitation_classes_filename, 'r') as file:
