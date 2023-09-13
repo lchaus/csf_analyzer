@@ -47,9 +47,13 @@ class Wavefunction:
 
         with open(self.orca_output_file, "r") as file:
             data = file.read()
-    
+
+        # We extract wavefunction written after last iteration in the output file
+        pattern_csf = r"                 <<<<<<<<<<<<<<<<<<INITIAL CI STATE CHECK>>>>>>>>>>>>>>>>>>(.*?)                 <<<<<<<<<<<<<<<<<<INITIAL CI STATE CHECK>>>>>>>>>>>>>>>>>>"
+        data = re.search(pattern_csf, data, re.DOTALL)
+
         pattern = re.compile(r"STATE\s+(\d+).+?\n((?:\s+\d+\.\d+.+?\n)+)")
-        matches = pattern.finditer(data)
+        matches = pattern.finditer(data.group(0))
 
         self.wavefunction = {}
 
