@@ -238,7 +238,6 @@ class Wavefunction:
                     for key, value in value.items():
                         file.write(f'({root}, {key}): {value}\n')
 
-
     ### VISUALIZATION ###
     def visualize(self, excitation_classes_filename, thresh_pie=0.04, thresh_bar=0.01, save_dir ='./plots'):
         excitation_classes = {}
@@ -261,12 +260,12 @@ class Wavefunction:
         roots = sorted(set(root for root, _ in excitation_classes.keys()))
 
         # Define colors for the reference CSF and static contributions
-        colors = {'Local': 'paleturquoise', 'Others': 'gray'}
+        colors = {'Local': 'paleturquoise', 'Others': 'gray', 'ROHF': 'plum', 'LMCT': 'gold', 'LMCT+Single': 'tomato', 'Other': 'gray'}
 
         # Create a new color for each unique excitation in the dataset
         excitation_types = set(excitation for _, excitation in excitation_classes.keys())
         # Create a color map with more unique colors by combining several colormaps
-        color_list = plt.cm.tab20(np.linspace(0, 1, 20)).tolist() + plt.cm.tab20b(np.linspace(0, 1, 20)).tolist() + plt.cm.tab20c(np.linspace(0, 1, 20)).tolist()
+        color_list = plt.cm.tab20(np.linspace(0, 1, 20)).tolist() + plt.cm.Pastel1(np.linspace(0, 1, 9)).tolist() + plt.cm.tab20c(np.linspace(0, 1, 20)).tolist()  + plt.cm.Pastel2(np.linspace(0, 1, 8)).tolist()
         cm = mcolors.LinearSegmentedColormap.from_list('combined_colormap', color_list, N=len(color_list))
     
         for i, excitation_type in enumerate(sorted(excitation_types - set(colors.keys()))):
@@ -327,7 +326,7 @@ class Wavefunction:
             # Save the figure, convert root to string before concatenating
             plt.margins(0,0)
 
-            plt.savefig(os.path.join(save_dir, f'T_{root}_loc_pie.png'), bbox_inches='tight',pad_inches = 0,transparent=True)
+            plt.savefig(os.path.join(save_dir, f'T_{root}_pie.png'), bbox_inches='tight',pad_inches = 0,transparent=True)
             plt.close()
 
         # Find the maximum weight value across all roots
@@ -368,5 +367,5 @@ class Wavefunction:
                 ax.text(v + 0.01, i, f'{v:.3f}', color='black', fontsize=10)
 
             # Save the figure
-            plt.savefig(os.path.join(save_dir, f'T_{root}_loc_bar.png'), bbox_inches='tight')
+            plt.savefig(os.path.join(save_dir, f'T_{root}_bar.png'), bbox_inches='tight')
             plt.close()
