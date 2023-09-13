@@ -14,7 +14,7 @@ This is a command-line tool to analyze wavefunctions from ORCA (CASSCF, ICE-CI..
 This program is designed to evaluate charge-transfer contributions to a localized multiconfigurational wavefunction. Preferably, one should include in the active space and localize full orbital shells (e.g. 3d, 4d...). The program will evaluate, with respect to the main configuration of each root, local contributions (electron count is the same in every block), and charge-transfer contributions (sum of the block to block electron transfer). We can later plot, in the form of pie charts or bar plots:
 
 * The main CSF (Tn)
-* Local contributions
+* Local contributions (all summed together)
 * All block to block contribution above a given threshold (e.g. 3d -> 4d, 3d -> 3p)
 
 Orbital blocks and their labels in the ORCA wavefunction are defined by the user in a file ```orbitals.dict``` that you should keep in this format where you will run the program:
