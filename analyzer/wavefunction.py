@@ -1,3 +1,4 @@
+from icecream import ic
 import os
 import ast 
 import re
@@ -7,17 +8,20 @@ import matplotlib.colors as mcolors
 import numpy as np
 
 class Wavefunction:
-    def __init__(self, orca_output_file=None, orbitals_file=None, thresh_bar=0.01, thresh_pie=0.04):
-        self.roots = []
+    def __init__(self, orca_output_file=None, orbitals_file=None, thresh_bar=0.01, thresh_pie=0.04, ref_csf_threshold=None, ref_define=None):
         self.thresh_bar = thresh_bar
         self.thresh_pie = thresh_pie
+        self.ref_csf_threshold = ref_csf_threshold
+        self.ref_csf_threshold_dict = {}
+        self.ref_define = ref_define
+        self.ground_state_csf = None
+        self.lmct_gl = None 
         self.orbitals_file = orbitals_file
         self.orca_output_file = orca_output_file
         self.wavefunction = {}
-        self.CSF = None
         self.orbitals = None
 
-    #Read orbitals names and labels from a predefined file (Warning: ORCA is 0 based)
+    #Read orbitals names and labels from a predefined file 
     def read_orbitals(self):
         # Read the content of the orbitals.dict file
         with open(self.orbitals_file, 'r') as file:
@@ -61,7 +65,7 @@ class Wavefunction:
                 parsed_csf = parse_csf_string(csf) 
                 self.wavefunction[state_num].append((weight, parsed_csf))
 
-    def analyze(self):
+    def local_analysis(self):
         excitation_classes = defaultdict(float)
 
         # Mapping from numbers to strings
@@ -104,7 +108,93 @@ class Wavefunction:
             with open("excitation_classes.txt", "w") as file:
                 for excitation_class, weight in excitation_classes.items():
                     file.write(f"{excitation_class}: {weight}\n")
+    
+    def reference_csf(self):
+        # Parse self.ref_csf_threshold each root and store it in a dictionary
+        self.ref_csf_threshold_dict = {}
+        
+        with open(self.ref_csf_threshold, 'r') as file:
+            for line in file:
+                key, value = line.strip().split()
+                key = int(key)
+                value = float(value)
+                self.ref_csf_threshold_dict[str(key)] = value
 
+        # Parse the CSF reference definition for parent CSF (e.g. ROHF) and LMCT CSF.
+        with open(self.ref_define, 'r') as file:
+            for line in file:
+                key, value = line.strip().split()
+                if key == 'GS':
+                    root, csf, occ = value.split(',')
+                    root = int(root)
+                    csf = int(csf)
+                    occ = int(occ)
+                    self.ground_state_csf = (root, csf, occ)
+                elif key == 'LMCT':
+                    loss, gain = value.split(',')
+                    loss = int(loss)
+                    gain = int(gain)
+                    self.lmct_gl = (loss, gain)
+
+    def degree_analysis(self):
+        def get_excitation_degree(ref_csf, curr_csf):
+            ''' A function to compute the excitation degree between two CSFs '''
+            electron_loss = 0
+            electron_gain = 0
+            loss_indices = []
+            gain_indices = []
+
+            for i, (ref, curr) in enumerate(zip(ref_csf, curr_csf)):
+                if ref != curr:
+                    if ref[0] == '2':
+                        ref_value = 2
+                    elif ref[0] == '1':
+                        ref_value = 1
+                    else:
+                        ref_value = 0
+                    if curr[0] == '2':
+                        curr_value = 2
+                    elif curr[0] == '1':
+                        curr_value = 1
+                    else:
+                        curr_value = 0
+                    if ref_value > curr_value:
+                        electron_loss += ref_value - curr_value
+                        loss_indices.append(i)
+                    elif ref_value < curr_value:
+                        electron_gain += curr_value - ref_value
+                        gain_indices.append(i)
+            if electron_loss == electron_gain:
+                return electron_loss, (loss_indices, gain_indices)
+            else:
+                return None
+        #Retrieve ground state CSF
+        ground_state_csf = self.wavefunction[self.ground_state_csf[0]][self.ground_state_csf[1]][self.ground_state_csf[2]]
+
+        state_configs = defaultdict(list)
+        # Loop over all states (roots) and their associated CSFs
+        for root, csfs in self.wavefunction.items():
+            root_str = str(root)  # convert root number to string to use it as a key
+            # Extract the reference CSFs for the current state (root)
+            for weight, curr_csf in csfs:
+                if round(weight,2) >= self.ref_csf_threshold_dict[root_str]:  # If the weight is above the threshold, store it as a main CSF
+                    excitation_degree, (loss_indices, gain_indices) = get_excitation_degree(ground_state_csf, curr_csf)
+                    if excitation_degree == 1 and (loss_indices[0] == lmct_gl[0] and gain_indices[0] == lmct_gl[1]):
+                        state_configs[root].append(("LMCT", loss_indices, gain_indices, weight, curr_csf))
+                    else:
+                        state_configs[root].append((excitation_degree, loss_indices, gain_indices, weight, curr_csf))
+
+            #Loop over all CSFs for the current state (root)
+            for weight, curr_csf in csfs:
+                # Avoid considering the previously stored main CSFs and 'LMCT+Mono' excitations
+                if curr_csf in [csf for _, _, _, _, csf in state_configs[root]]:
+                    continue
+                #Get all remaining excitations from the Ground state
+                # Unpack the result from get_excitation_degree()
+                excitation_degree, (loss_indices, gain_indices) = get_excitation_degree(ground_state_csf, curr_csf)
+                state_configs[root].append((excitation_degree, loss_indices, gain_indices, weight, curr_csf))
+
+        pass
 
     def visualize(self, excitation_classes_filename, thresh_pie=0.04, thresh_bar=0.01, save_dir ='./plots'):
         excitation_classes = {}
