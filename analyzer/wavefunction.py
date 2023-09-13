@@ -24,14 +24,14 @@ class Wavefunction:
     ### DATA EXTRACTION ###
     #Read orbitals names and labels from a predefined file 
     def read_orbitals(self):
-        # Read the content of the orbitals.dict file
+        # Read the content of the orbitals.dict file (contains the orbitals names and labels)
         with open(self.orbitals_file, 'r') as file:
             file_content = file.read()
 
         # Use ast.literal_eval to parse the content of the file into a dictionary
         self.orbitals = ast.literal_eval(file_content)
 
-    #Parse orca output file and extract CSF and weights
+    #Parse orca output file and extract CSFs and weights
     def extract_data(self):
         def parse_csf_string(csf_string):
             parsed_csf = []
@@ -70,7 +70,6 @@ class Wavefunction:
     def local_analysis(self):
         excitation_classes = defaultdict(float)
 
-        # Mapping from numbers to strings
         number_to_string = {1: 'Single', 2: 'Double', 3: 'Triple', 4: 'Quadruple'}
 
         for root, csfs in self.wavefunction.items():
@@ -106,13 +105,13 @@ class Wavefunction:
                 elif total_difference == 0:
                     excitation_classes[(root, 'Local')] += weight
 
-            #Write all contributions to a text file
+            #Write all contributions to a text file for later use (visualize)
             with open("excitation_classes.txt", "w") as file:
                 for excitation_class, weight in excitation_classes.items():
                     file.write(f"{excitation_class}: {weight}\n")
     
     def reference_csf(self):
-        # Parse self.ref_csf_threshold each root and store it in a dictionary
+        # Parse self.ref_csf_threshold (user defined) each root and store it in a dictionary
         self.ref_csf_threshold_dict = {}
         
         with open(self.ref_csf_threshold, 'r') as file:
@@ -122,7 +121,7 @@ class Wavefunction:
                 value = float(value)
                 self.ref_csf_threshold_dict[str(key)] = value
 
-        # Parse the CSF reference definition for parent CSF (e.g. ROHF) and LMCT CSF.
+        # Parse the CSF reference definition for parent CSF (e.g. ROHF) and LMCT CSF (user defined).
         with open(self.ref_define, 'r') as file:
             for line in file:
                 key, value = line.strip().split()
@@ -171,14 +170,14 @@ class Wavefunction:
             else:
                 return None
 
-        #Retrieve ground state CSF
+        #Retrieve ground state CSF (user-defined).
         ground_state_csf = self.wavefunction[self.ground_state_csf[0]][self.ground_state_csf[1]][self.ground_state_csf[2]]
 
         state_configs = defaultdict(list)
         # Loop over all states (roots) and their associated CSFs
         for root, csfs in self.wavefunction.items():
             root_str = str(root)  # convert root number to string to use it as a key
-            # Extract the reference CSFs for the current state (root)
+            # Extract the reference CSFs (above a given weight, to take into account heavily multireference states) for the current state (root)
             for weight, curr_csf in csfs:
                 if round(weight,2) >= self.ref_csf_threshold_dict[root_str]:  # If the weight is above the threshold, store it as a main CSF
                     excitation_degree, (loss_indices, gain_indices) = get_excitation_degree(ground_state_csf, curr_csf)
@@ -188,20 +187,18 @@ class Wavefunction:
                         state_configs[root].append((excitation_degree, loss_indices, gain_indices, weight, curr_csf))
 
             #Loop over all CSFs for the current state (root)
+            #Get all remaining excitations from the Ground state
             for weight, curr_csf in csfs:
-                # Avoid considering the previously stored main CSFs and 'LMCT+Mono' excitations
+                # Ignore the previously stored main CSFs and 'LMCT+Mono' excitations
                 if curr_csf in [csf for _, _, _, _, csf in state_configs[root]]:
                     continue
-
-                #Get all remaining excitations from the Ground state
-                # Unpack the result from get_excitation_degree()
                 excitation_degree, (loss_indices, gain_indices) = get_excitation_degree(ground_state_csf, curr_csf)
                 state_configs[root].append((excitation_degree, loss_indices, gain_indices, weight, curr_csf))
 
             summary = defaultdict(lambda: defaultdict(float))  # Initialize a dictionary with default values as 0.0
             inverse_original_orbitals = {v: k for k, v in self.orbitals.items()}  # To map back from indices to orbital names
     
-            # Loop over all roots (states) and their associated configurations
+            #Process the information and store in a dictionary (summary)
             for root, configs in state_configs.items():
                 # Loop over all configurations for the current root
                 summary[root]['Other'] = 1 - sum([config[3] for config in configs])
@@ -243,17 +240,11 @@ class Wavefunction:
         excitation_classes = {}
         with open(excitation_classes_filename, 'r') as file:
             for line in file:
-                # Split the line into key and value
                 key_str, value_str = line.strip().split(': ')
-                
-                # Convert value to float
                 value = float(value_str)
-                
                 # Parse the key as a tuple and preserve the original string for later use as Latex
                 key_str = key_str.replace('\\\\', '\\').replace("'", "")  
                 key_tuple = tuple(key_str.strip('()').split(', '))
-
-                # Add the key-value pair to the dictionary
                 excitation_classes[int(key_tuple[0]),key_tuple[1]] = value
         
         # Sort roots and get unique values
@@ -264,6 +255,7 @@ class Wavefunction:
 
         # Create a new color for each unique excitation in the dataset
         excitation_types = set(excitation for _, excitation in excitation_classes.keys())
+
         # Create a color map with more unique colors by combining several colormaps
         color_list = plt.cm.tab20(np.linspace(0, 1, 20)).tolist() + plt.cm.Pastel1(np.linspace(0, 1, 9)).tolist() + plt.cm.tab20c(np.linspace(0, 1, 20)).tolist()  + plt.cm.Pastel2(np.linspace(0, 1, 8)).tolist()
         cm = mcolors.LinearSegmentedColormap.from_list('combined_colormap', color_list, N=len(color_list))
@@ -275,7 +267,6 @@ class Wavefunction:
             else:
                 colors[excitation_type] = cm(i)
 
-        # Create the save directory if it doesn't exist
         os.makedirs(save_dir, exist_ok=True)
 
         # Iterate over roots to create pie charts
@@ -292,9 +283,6 @@ class Wavefunction:
             if neglected_weight > 0:
                 labels += ('Others',)
                 sizes += (neglected_weight,)
-            
-            # Create an explode list
-            #explode = [0.0 if i==0 else 0 for i in range(len(sizes))]
         
             fig, ax = plt.subplots(figsize=(10,5))
             wedges, texts, autotexts = ax.pie(sizes, labels=labels, colors=[colors[label] for label in labels], autopct='%1.1f%%')
@@ -303,13 +291,6 @@ class Wavefunction:
             for autotext in autotexts:
                 autotext.set_bbox(dict(facecolor='none', alpha=0.5, edgecolor='none', boxstyle='round,pad=2'))
             
-            #for i, autotext in enumerate(autotexts):
-            #    x, y = autotext.get_position()
-            #if i % 2 == 0:
-            #    autotext.set_position((x*1.1, y*1.1))
-            #else:
-            #    autotext.set_position((x*1.1, y*1.1))
-        
             # Add a black border to the first slice
             wedges[0].set_edgecolor('black')
             wedges[0].set_linewidth(1)  # Adjust as needed
