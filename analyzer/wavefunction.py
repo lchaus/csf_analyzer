@@ -258,14 +258,9 @@ class Wavefunction:
                     key_str, value_str = line.strip().split(': ')
                     key_str = key_str.replace('\\\\', '\\').replace("'", "") 
                     value = float(value_str)
-                    ic(key_str)
-                    ic(key_str.strip('()').split(', ',1)[1])
                     key_tuple = (int(key_str.strip('()').split(', ')[0]), key_str.strip('()').split(', ',1)[1])
-                    ic(key_tuple)
                     excitation_classes[key_tuple] = value
        
-        ic(excitation_classes) 
-
         # Sort roots and get unique values
         roots = sorted(set(root for root, _ in excitation_classes.keys()))
 
