@@ -8,7 +8,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 
 class Wavefunction:
-    def __init__(self, orca_output_file=None, orbitals_file=None, thresh_bar=0.01, thresh_pie=0.04, ref_csf_threshold=None, ref_define=None):
+    def __init__(self, orca_output_file=None, orbitals_file=None, thresh_bar=0.01, thresh_pie=0.04, ref_csf_threshold=None, ref_define=None, degree_analysis_vis=False):
         self.thresh_bar = thresh_bar
         self.thresh_pie = thresh_pie
         self.ref_csf_threshold = ref_csf_threshold
@@ -20,6 +20,7 @@ class Wavefunction:
         self.orca_output_file = orca_output_file
         self.wavefunction = {}
         self.orbitals = None
+        self.degree_analysis_vis = degree_analysis_vis
 
     ### DATA EXTRACTION ###
     #Read orbitals names and labels from a predefined file 
@@ -215,11 +216,10 @@ class Wavefunction:
                     elif config[0] in [1, 2] and config[3] >= self.ref_csf_threshold_dict[str(root)]:
                         if config[0] == 1:
                             for loss_indice, gain_indice in zip(config[1], config[2]):
-                                #key = f'$ {inverse_original_orbitals[loss_indice]} \\rightarrow {inverse_original_orbitals[gain_indice]}$'
                                 key = r'$\\mathrm{'+ inverse_original_orbitals[loss_indice]+ r'\\rightarrow\\mathrm{' + inverse_original_orbitals[gain_indice] + r'$'
                                 summary[root][key] += config[3]
                         else:  # case of double excitations (because some reference configurations are double excitations)
-                            key = r'$\\mathrm{'+ r', \\mathrm{'.join([fr'{inverse_original_orbitals[i]}' for i in config[1]]) + r' \\rightarrow\\mathrm{' + r', \\mathrm{'.join([fr'{inverse_original_orbitals[i]}' for i in config[2]]) + r'$'
+                            key = r'$' + ', '.join([r'\mathrm{%s' % inverse_original_orbitals[i] for i in config[1]]) + r' \rightarrow ' + ', '.join([r'\mathrm{%s' % inverse_original_orbitals[i] for i in config[2]]) + r'$'
                             summary[root][key] += config[3]
                     #Classify remaining excitations
                     elif 0 < config[0] <= 4:
@@ -244,15 +244,28 @@ class Wavefunction:
     ### VISUALIZATION ###
     def visualize(self, excitation_classes_filename, thresh_pie=0.04, thresh_bar=0.01, save_dir ='./plots'):
         excitation_classes = {}
-        with open(excitation_classes_filename, 'r') as file:
-            for line in file:
-                key_str, value_str = line.strip().split(': ')
-                value = float(value_str)
-                # Parse the key as a tuple and preserve the original string for later use as Latex
-                key_str = key_str.replace('\\\\', '\\').replace("'", "")  
-                key_tuple = tuple(key_str.strip('()').split(', '))
-                excitation_classes[int(key_tuple[0]),key_tuple[1]] = value
-        
+        if not self.degree_analysis_vis:
+            with open(excitation_classes_filename, 'r') as file:
+                for line in file:
+                    key_str, value_str = line.strip().split(': ')
+                    value = float(value_str)
+                    key_str = key_str.replace('\\\\', '\\').replace("'", "")  
+                    key_tuple = tuple(key_str.strip('()').split(', '))
+                    excitation_classes[int(key_tuple[0]),key_tuple[1]] = value
+        elif self.degree_analysis_vis:
+            with open(excitation_classes_filename, 'r') as file:
+                for line in file:
+                    key_str, value_str = line.strip().split(': ')
+                    key_str = key_str.replace('\\\\', '\\').replace("'", "") 
+                    value = float(value_str)
+                    ic(key_str)
+                    ic(key_str.strip('()').split(', ',1)[1])
+                    key_tuple = (int(key_str.strip('()').split(', ')[0]), key_str.strip('()').split(', ',1)[1])
+                    ic(key_tuple)
+                    excitation_classes[key_tuple] = value
+       
+        ic(excitation_classes) 
+
         # Sort roots and get unique values
         roots = sorted(set(root for root, _ in excitation_classes.keys()))
 
