@@ -44,3 +44,9 @@ To visualize the results you can run:
 
 Which will create a directory ```./plots``` containing bar plots and pie charts of the data.
 You can control the threshold for the plots with (TODO)
+
+
+
+### Excitation degree evaluation
+
+
