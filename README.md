@@ -58,7 +58,7 @@ The program will classify all configurations as such:
 * Single, Double, Triple, Quadruple...  (with respect to ROHF confifuration)
 * LMCT + Single are a special class of double excitations that are printed separetly (TODO: add option to deactivate)
 
-To run the program, you will need in this order:
+To run the program, you will need, in this order:
 
 * ORCA output file with the printed wavefunction (for example using "TPrint 1e-6" or lower in the CI block)
 * A file containing orbital names and labels for retrieving the reference configurations. For later use in matplotlib (with LaTeX), please use this formatting:
