@@ -113,7 +113,7 @@ To visualize the results you can run:
 ```python $path_csf_analyzer/main.py -da visualize excitation_classes.txt```
 
 Which will create a directory ```./plots``` containing bar plots and pie charts of the data.
-Remember to add option -da when running ````visualize``` on this type of analysis.
+Remember to add option -da when running ```visualize``` on this type of analysis.
 
 You can also control the threshold for plotting a given contribution in either bar plots of pie charts using respectively options ```-tb 0.01``` or ```-tp 0.01```:
 
