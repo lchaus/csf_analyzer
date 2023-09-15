@@ -106,7 +106,6 @@ class Wavefunction:
                         target_block = block_name
 
                 if source_block is not None and target_block is not None:
-                    ic(source_block)
                     excitation_classes[(root, r'$\mathrm{' + source_block + r'\rightarrow\mathrm{' + target_block + r'$ ' +  number_to_string.get(excitation_degree, 'Unsupported') )] += weight
                 elif total_difference == 0:
                     excitation_classes[(root, 'Local')] += weight
