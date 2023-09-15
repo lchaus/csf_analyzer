@@ -34,7 +34,7 @@ You also have to print the wavefunction with ORCA (for example using "TPrint 1e-
 
 Then run:
 
-```python $path_csf_analyzer/main.py analyze_ct cuo2.out orbitals.dict```
+```python $path_csf_analyzer/main.py analyze_ct orca.out orbitals.dict```
 
 This creates a file called ```excitation_classes.txt``` containing all charge-transfer information for each root in the wavefunction.
 
@@ -104,7 +104,7 @@ Here, the GS is found in the 0th root, as the 0th CSF of that root. The LMCT con
 
 Finally, you can run the program as:
 
-```python $path_csf_analyzer/main.py analyze_degree cuo2.out orbitals.dict ref_csf_threshold.txt ref_def.txt```
+```python $path_csf_analyzer/main.py analyze_degree orca.out orbitals.dict ref_csf_threshold.txt ref_def.txt```
 
 This creates a file called ```excitation_classes.txt``` containing excitation degree information for each root in the wavefunction.
 
