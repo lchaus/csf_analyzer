@@ -45,7 +45,7 @@ To visualize the results you can run:
 Which will create a directory ```./plots``` containing bar plots and pie charts of the data.
 You can also control the threshold for plotting a given contribution in either bar plots of pie charts using respectively options ```-tb 0.01``` or ```-tp 0.01```:
 
-```python $path_csf_analyzer/main.py visualize -tp 0.01 excitation_classes.txt`
+```python $path_csf_analyzer/main.py visualize -tp 0.01 excitation_classes.txt```
 
 ### Excitation degree evaluation
 
