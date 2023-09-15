@@ -1,5 +1,4 @@
 import argparse
-from icecream import ic
 from analyzer.wavefunction import Wavefunction
 
 def main():
