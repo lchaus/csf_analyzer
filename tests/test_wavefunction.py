@@ -4,11 +4,11 @@ from analyzer.wavefunction import Wavefunction
 class TestWavefunction(unittest.TestCase):
 
     def setUp(self):
-        # You can initialize any necessary resources or configurations here.
+        # TODO 
         pass
 
     def tearDown(self):
-        # You can clean up resources here.
+        # TODO CLEAN UP
         pass
 
     def test_read_orbitals(self):
@@ -25,7 +25,7 @@ class TestWavefunction(unittest.TestCase):
         wavefunction.extract_data()
         self.assertGreater(len(wavefunction.wavefunction), 0)
 
-    # Add more test cases as needed
+    # Add more test cases for a simple reproducible example
 
 if __name__ == '__main__':
     unittest.main()
